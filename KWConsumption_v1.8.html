@@ -1,0 +1,1098 @@
+<!DOCTYPE html>
+<html lang="pt">
+<!-- 
+ * ConsumokW v1.8 (Última Atualização: 30/12/2024)
+ *
+ * Descrição: O ConsumokW é uma ferramenta gratuita desenvolvida para facilitar o cálculo
+ * e a gestão do consumo de energia elétrica. Ele oferece um ambiente acessível para registrar
+ * medições, calcular custos e monitorar padrões de consumo ao longo do tempo. É ideal para
+ * usuários que buscam entender e otimizar seu uso de energia de maneira prática e eficiente.
+ * 
+ * Filosofia: Inspirado na essência do software livre, o ConsumokW mantém um compromisso
+ * com a transparência e a acessibilidade. Todo o código está disponível em um único arquivo
+ * HTML, sem dependências externas ou coleta de dados, permitindo que o usuário tenha controle
+ * total sobre as funcionalidades e possa adaptá-las conforme suas necessidades.
+ * 
+ * Status: Em fase de maturação, o ConsumokW oferece funcionalidades completas para desktop,
+ * embora ainda possa apresentar limitações em dispositivos móveis. Sugestões e colaborações
+ * são sempre bem-vindas para sua contínua evolução.
+ * 
+ * Licença: GNU GPLv3 - Consulte https://www.gnu.org/licenses/gpl-3.0.html para detalhes.
+ * 
+ * Autor: André Ricardo
+ * 
+ * Contato:
+ * - Github:  https://github.com/AndreRicardoJS/KWComsuption
+ * Aviso: O uso deste software é por conta e risco do usuário. Recomendamos exportar
+ * os dados regularmente para evitar perdas e garantir a segurança das informações.
+-->
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Consumo de Energia</title>
+    <style>
+        /* Estilização geral */
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            color: #212529;
+            line-height: 1.6;
+        }
+
+        /* Menu principal */
+        .menu {
+            background-color: #007bff;
+            display: flex;
+            justify-content: center;
+            padding: 10px 0;
+            position: sticky;
+            top: 0;
+            width: 100%;
+            z-index: 1000;
+        }
+
+        .menu a {
+            color: white;
+            text-align: center;
+            padding: 10px 20px;
+            text-decoration: none;
+            transition: background-color 0.3s ease;
+        }
+
+        .menu a:hover {
+            background-color: #0056b3;
+        }
+
+        /* Container principal */
+        .container {
+            padding: 10px;
+            margin: 0px auto 20px;
+            background-color: white;
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 5px;
+            max-width: 1200px;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        /* Estilização das tabelas */
+        .table-container {
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            font-size: 1em;
+            text-align: center;
+        }
+
+        table,
+        th,
+        td {
+            border: 1px solid #dee2e6;
+        }
+
+        th,
+        td {
+            padding: 12px;
+            text-align: center;
+        }
+
+        th {
+            background-color: #007bff;
+            color: white;
+            font-weight: bold;
+        }
+
+        td.valor-kw {
+            text-align: center;
+        }
+
+        /* Formulários */
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            margin: 0 auto;
+            max-width: 600px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            width: 100%;
+        }
+
+        .form-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+        }
+
+        .form-row label {
+            flex: 1;
+            margin-bottom: 0;
+            align-self: center;
+        }
+
+        .form-row input,
+        .form-row select {
+            flex: 2;
+            padding: 10px;
+            box-sizing: border-box;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+        }
+
+        label {
+            margin-bottom: 0;
+            text-align: left;
+        }
+
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+            padding: 10px 20px;
+            transition: background-color 0.3s ease;
+            border-radius: 4px;
+            font-size: 1em;
+            align-self: center;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        .base-calculo {
+            font-size: 1em;
+            color: #6c757d;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .record-menu {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+            gap: 10px;
+        }
+
+        .actions {
+            display: flex;
+            gap: 5px;
+        }
+
+        .actions button {
+            padding: 6px 12px;
+        }
+
+        h1,
+        h2 {
+            text-align: center;
+            font-weight: 300;
+            color: #343a40;
+        }
+
+        /* Adicionando estilos de grid */
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            align-items: center;
+        }
+
+        .grid-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .grid-item label {
+            margin-bottom: 5px;
+        }
+
+        .grid-item input,
+        .grid-item select {
+            padding: 10px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+        }
+
+        /* Estilização específica para o formulário de relatório */
+        .report-form {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            width: 100%;
+        }
+
+        .report-row {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+        }
+
+        .report-row label {
+            margin-bottom: 5px;
+            text-align: center;
+        }
+
+        .report-row input {
+            width: 200px;
+            padding: 10px;
+            box-sizing: border-box;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+        }
+
+        .report-form button {
+            width: 200px;
+            padding: 10px;
+            box-sizing: border-box;
+            border-radius: 4px;
+        }
+
+        .assinatura {
+            position: fixed;
+            right: 0;
+            bottom: 0;
+            background-color: white;
+            padding: 10px;
+            font-size: 0.9em;
+            font-style: italic;
+        }
+
+        .dias-diferenca {
+            font-size: 0.75em;
+            /* Reduz o tamanho da fonte */
+
+            vertical-align: super;
+            /* Faz o texto ficar sobrescrito */
+
+            color: #6c757d;
+            /* Tom mais suave (opcional) */
+
+            margin-left: 2px;
+            /* espaçamento entre data fim e cálculo de dias */
+        }
+
+        .media-diaria {
+            font-size: 0.75em;
+            /* Tamanho da fonte menor */
+
+            vertical-align: super;
+            /* Faz o texto ficar sobrescrito */
+
+            color: #6c757d;
+            /* Cor suave */
+
+            margin-left: 2px;
+            /* Espaçamento entre o consumo e a média */
+        }
+
+        /* Centraliza o formulário */
+        #formConsumo {
+            width: 50%;
+            margin: 0 auto;
+            /* Centraliza o formulário na tela */
+        }
+
+        /* Ajusta a largura dos inputs e selects dentro do formulário */
+        #formConsumo input,
+        #formConsumo select {
+            width: 50%;
+            /* Faz os inputs e selects ocuparem 50% da largura do formulário */
+
+            display: block;
+            /* Garante que os inputs e selects sejam exibidos como blocos, ocupando toda a largura disponível */
+        }
+
+        #sobre {
+            margin: 20px auto;
+            max-width: 600px;
+            padding: 40px;
+            text-align: justify;
+            line-height: 1.0;
+
+        }
+
+        #licenca-container {
+            margin: 20px auto;
+            max-width: 600px;
+            padding: 40px;
+            text-align: justify;
+            line-height: 1.0;
+
+        }
+
+        .input-esquerdo {
+            margin-left: auto;
+        }
+
+        .input-direito {
+            margin-right: auto;
+        }
+
+        /* Botão Editar */
+        .botao-editar {
+            background-color: #28a745;
+            /* Verde */
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .botao-editar:hover {
+            background-color: #218838;
+            /* Tom mais escuro ao passar o mouse */
+        }
+
+        /* Botão Salvar */
+        .botao-salvar {
+            background-color: #ffc107;
+            /* Amarelo */
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .botao-salvar:hover {
+            background-color: #e0a800;
+            /* Tom mais escuro */
+        }
+
+        /* Botão Apagar */
+        .botao-apagar {
+            background-color: #dc3545;
+            /* Vermelho */
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .botao-apagar:hover {
+            background-color: #c82333;
+            /* Tom mais escuro */
+        }
+    </style>
+    <script>
+        async function getTarifasEDP() {
+            return { "Tarifa Simples": 0.1624 };
+        }
+
+        async function getTarifasGalp() {
+            return { "Tarifa Simples": 0.1500 };
+        }
+
+        async function getTarifasEndesa() {
+            return { "Tarifa Simples": 0.1495 };
+        }
+
+        let db;
+        const request = indexedDB.open("consumoEnergiaDB", 1);
+
+        request.onupgradeneeded = function (event) {
+            db = event.target.result;
+            const objectStore = db.createObjectStore("consumo", { keyPath: "id", autoIncrement: true });
+            objectStore.createIndex("dataInicio", "dataInicio", { unique: true });
+            objectStore.createIndex("dataFim", "dataFim", { unique: false });
+            objectStore.createIndex("valorMedidor", "valorMedidor", { unique: false });
+            objectStore.createIndex("consumo", "consumo", { unique: false });
+            objectStore.createIndex("valorPago", "valorPago", { unique: false });
+            objectStore.createIndex("valorPorKw", "valorPorKw", { unique: false });
+            objectStore.createIndex("operadora", "operadora", { unique: false });
+        };
+
+        request.onsuccess = function (event) {
+            db = event.target.result;
+            exibirUltimos3Meses();
+        };
+
+        request.onerror = function (event) {
+            console.error("Erro ao abrir o banco de dados:", event.target.errorCode);
+        };
+
+        function adicionarConsumo() {
+            const dataInicio = document.getElementById("dataInicio").value;
+            const dataFim = document.getElementById("dataFim").value;
+            const valorMedidor = parseFloat(document.getElementById("valorMedidor").value);
+            const operadora = document.getElementById("operadora").value;
+
+            getTarifaOperadora(operadora).then(valorPorKw => {
+                const transaction = db.transaction(["consumo"], "readwrite");
+                const objectStore = transaction.objectStore("consumo");
+
+                let consumo = 0;
+
+                const checkRequest = objectStore.openCursor();
+
+                checkRequest.onsuccess = function (event) {
+                    const cursor = event.target.result;
+                    if (cursor) {
+                        const registro = cursor.value;
+                        const regInicio = new Date(registro.dataInicio);
+                        const regFim = new Date(registro.dataFim);
+                        const novoInicio = new Date(dataInicio);
+                        const novoFim = new Date(dataFim);
+
+                        if ((novoInicio >= regInicio && novoInicio <= regFim) || (novoFim >= regInicio && novoFim <= regFim) || (novoInicio <= regInicio && novoFim >= regFim)) {
+                            alert("O intervalo de datas coincide com um registro existente.");
+                            return;
+                        }
+
+                        cursor.continue();
+                    } else {
+                        const request = objectStore.openCursor(null, "prev");
+
+                        request.onsuccess = function (event) {
+                            const cursor = event.target.result;
+                            if (cursor) {
+                                const ultimoRegistro = cursor.value;
+                                if (valorMedidor <= ultimoRegistro.valorMedidor) {
+                                    alert("O valor do medidor deve ser maior do que o último valor registrado.");
+                                    return;
+                                }
+                                consumo = valorMedidor - ultimoRegistro.valorMedidor;
+                            } else {
+                                consumo = 0;
+                            }
+
+                            const valorPago = consumo * valorPorKw;
+                            const addRequest = objectStore.add({ dataInicio, dataFim, valorMedidor, consumo, valorPago, valorPorKw, operadora });
+                            addRequest.onsuccess = function () {
+                                alert("Registro adicionado com sucesso!");
+                                document.getElementById("formConsumo").reset();
+                                exibirUltimos3Meses();
+                            };
+                            addRequest.onerror = function (event) {
+                                console.error("Erro ao adicionar o registro:", event.target.errorCode);
+                            };
+                        };
+                    }
+                };
+            });
+        }
+
+        function formatarData(data) {
+            const partes = data.split("-");
+            return `${partes[2]}/${partes[1]}/${partes[0]}`;
+        }
+
+        function exibirUltimos3Meses() {
+            const transaction = db.transaction(["consumo"], "readonly");
+            const objectStore = transaction.objectStore("consumo");
+
+            const consumoMeses = [];
+            objectStore.openCursor(null, "prev").onsuccess = function (event) {
+                const cursor = event.target.result;
+                if (cursor && consumoMeses.length < 3) {
+                    consumoMeses.push(cursor.value);
+                    cursor.continue();
+                } else {
+                    consumoMeses.sort((a, b) => new Date(b.dataFim) - new Date(a.dataFim));
+
+                    let tabelaHTML = `<div class="table-container"><table>
+                                <thead>
+                                    <tr>
+                                        <th>Data Início</th>
+                                        <th>Data Fim</th>
+                                        <th>Valor do Medidor</th>
+                                        <th>Consumo (kW)</th>
+                                        <th>Valor Pago (€)</th>
+                                        <th>Valor por kW (€)</th>
+                                    </tr>
+                                </thead>
+                                <tbody>`;
+                    consumoMeses.forEach(item => {
+                        const dias = calcularDias(item.dataInicio, item.dataFim); // Calcular diferença de dias
+                        tabelaHTML += `<tr>
+                                <td>${formatarData(item.dataInicio)}</td>
+                                <td>${formatarData(item.dataFim)}<sup class="dias-diferenca">(${dias} dias)</sup></td>
+                                <td>${(item.valorMedidor || 0).toFixed(2)}</td>
+                                <td>${(item.consumo || 0).toFixed(2)}<span class="media-diaria">(${(item.consumo / calcularDias(item.dataInicio, item.dataFim)).toFixed(0)}/dia)</span></td>
+                                <td>${(item.valorPago || 0).toFixed(2)}</td>
+                                <td class="valor-kw">${(item.valorPorKw || 0).toFixed(4)} <span style="font-size:0.8em;">(${item.operadora})</span></td>
+                            </tr>`;
+                    });
+                    tabelaHTML += `</tbody></table></div>`;
+                    document.getElementById("tabelaConsumo").innerHTML = tabelaHTML;
+                }
+            };
+        }
+
+        function calcularDias(dataInicio, dataFim) {
+            const inicio = new Date(dataInicio);
+            const fim = new Date(dataFim);
+            const diferenca = Math.abs(fim - inicio); // Diferença em milissegundos
+            return Math.ceil(diferenca / (1000 * 60 * 60 * 24)); // Converter para dias
+        }
+
+        function exibirRegistros(periodo) {
+            const transaction = db.transaction(["consumo"], "readonly");
+            const objectStore = transaction.objectStore("consumo");
+
+            let limite = Infinity;
+            if (periodo === "12") {
+                limite = 12;
+            } else if (periodo === "24") {
+                limite = 24;
+            }
+
+            const consumoMeses = [];
+            const request = objectStore.openCursor(null, "prev");
+
+            request.onsuccess = function (event) {
+                const cursor = event.target.result;
+                if (cursor && consumoMeses.length < limite) {
+                    consumoMeses.push(cursor.value);
+                    cursor.continue();
+                } else {
+                    const registrosTableBody = document.getElementById("registrosTableBody");
+                    const tabelaRegistros = document.getElementById("tabelaRegistros");
+
+                    if (consumoMeses.length > 0) {
+                        let registrosHTML = '';
+                        consumoMeses.forEach(item => {
+                            const dias = calcularDias(item.dataInicio, item.dataFim); // Calcular diferença em dias
+                            registrosHTML += `<tr>
+    <td><input type="date" id="dataInicio-${item.id}" value="${item.dataInicio}" disabled></td>
+    <td><input type="date" id="dataFim-${item.id}" value="${item.dataFim}" disabled>
+        <sup class="dias-diferenca">(${dias} dias)</sup>
+    </td> 
+    <td><input type="number" id="valorMedidor-${item.id}" value="${(item.valorMedidor || 0).toFixed(0)}" disabled style="width: 50%; text-align: center;"></td>
+    <td>${(item.consumo || 0).toFixed(2)}
+        <span class="media-diaria">(${(item.consumo / calcularDias(item.dataInicio, item.dataFim)).toFixed(0)}/dia)</span>
+    </td>                             
+    <td>${(item.valorPago || 0).toFixed(2)}</td>
+    <td class="valor-kw">${(item.valorPorKw || 0).toFixed(4)} <span style="font-size:0.8em;">(${item.operadora})</span></td>
+    <td class="actions">
+        <button onclick="editarRegistro(${item.id})" id="editar-${item.id}" class="botao-editar">Editar</button>
+        <button onclick="salvarRegistro(${item.id})" id="salvar-${item.id}" class="botao-salvar" style="display:none;">Salvar</button>
+        <button onclick="apagarRegistro(${item.id})" id="apagar-${item.id}" class="botao-apagar">Apagar</button>
+    </td>
+</tr>`;
+                        });
+
+                        registrosTableBody.innerHTML = registrosHTML;
+                        tabelaRegistros.style.display = ""; // Garante que a tabela seja exibida
+                    } else {
+                        registrosTableBody.innerHTML = "<tr><td colspan='7' style='text-align: center;'>Nenhum registro encontrado.</td></tr>";
+                    }
+                }
+            };
+        }
+
+
+
+        function editarRegistro(id) {
+            const dataInicio = document.getElementById(`dataInicio-${id}`);
+            const dataFim = document.getElementById(`dataFim-${id}`);
+            const valorMedidor = document.getElementById(`valorMedidor-${id}`);
+            const botaoEditar = document.getElementById(`editar-${id}`);
+            const botaoSalvar = document.getElementById(`salvar-${id}`);
+            const botaoApagar = document.getElementById(`apagar-${id}`);
+
+            // Habilitar os campos para edição
+            dataInicio.disabled = false;
+            dataFim.disabled = false;
+            valorMedidor.disabled = false;
+
+            // Alterar aparência dos botões
+            botaoEditar.style.backgroundColor = '#28a745'; // Verde
+            botaoEditar.style.color = 'white';
+
+            botaoApagar.textContent = "Cancelar";
+            botaoApagar.style.backgroundColor = '#dc3545'; // Vermelho
+            botaoApagar.style.color = 'white';
+            botaoApagar.onclick = function () {
+                cancelarEdicao(id);
+            };
+
+            // Exibir botão salvar
+            botaoEditar.style.display = 'none';
+            botaoSalvar.style.display = 'inline';
+        }
+
+        function cancelarEdicao(id) {
+            const dataInicio = document.getElementById(`dataInicio-${id}`);
+            const dataFim = document.getElementById(`dataFim-${id}`);
+            const valorMedidor = document.getElementById(`valorMedidor-${id}`);
+            const botaoEditar = document.getElementById(`editar-${id}`);
+            const botaoSalvar = document.getElementById(`salvar-${id}`);
+            const botaoApagar = document.getElementById(`apagar-${id}`);
+
+            // Desabilitar os campos de volta
+            dataInicio.disabled = true;
+            dataFim.disabled = true;
+            valorMedidor.disabled = true;
+
+            // Restaurar os botões para seu estado original
+            botaoEditar.style.backgroundColor = ''; // Cor padrão
+            botaoEditar.style.color = '';
+            botaoEditar.style.display = 'inline';
+
+            botaoSalvar.style.display = 'none';
+
+            botaoApagar.textContent = "Apagar";
+            botaoApagar.style.backgroundColor = ''; // Cor padrão
+            botaoApagar.style.color = '';
+            botaoApagar.onclick = function () {
+                apagarRegistro(id);
+            };
+        }
+
+        function salvarRegistro(id) {
+            console.log(`Iniciando a atualização do registro com ID: ${id}`);
+            const dataInicio = document.getElementById(`dataInicio-${id}`).value;
+            const dataFim = document.getElementById(`dataFim-${id}`).value;
+            const valorMedidor = parseFloat(document.getElementById(`valorMedidor-${id}`).value);
+
+            console.log(`Novos valores recebidos: Data Início: ${dataInicio}, Data Fim: ${dataFim}, Valor Medidor: ${valorMedidor}`);
+
+            const transaction = db.transaction(["consumo"], "readwrite");
+            const objectStore = transaction.objectStore("consumo");
+
+            const request = objectStore.get(id);
+
+            request.onsuccess = function (event) {
+                const data = event.target.result;
+                console.log(`Registro atual antes da edição:`, data);
+
+                data.dataInicio = dataInicio;
+                data.dataFim = dataFim;
+                data.valorMedidor = valorMedidor;
+
+                let consumo = 0;
+
+                // Cursor para encontrar o registro anterior
+                const requestAnterior = objectStore.openCursor(null, "prev");
+
+                requestAnterior.onsuccess = function (event) {
+                    const cursorAnterior = event.target.result;
+
+                    if (cursorAnterior) {
+                        if (cursorAnterior.value.id < id) {
+                            const valorMedidorAnterior = cursorAnterior.value.valorMedidor;
+                            console.log(`Valor do medidor anterior encontrado: ${valorMedidorAnterior}`);
+                            consumo = valorMedidor - valorMedidorAnterior;
+                            console.log(`Consumo calculado com base no valor anterior: ${consumo}`);
+
+                            data.consumo = consumo;
+                            data.valorPago = consumo * data.valorPorKw;
+
+                            salvarAtualizacao(objectStore, data, id);
+                        } else {
+                            cursorAnterior.continue();
+                        }
+                    } else {
+                        console.log("Nenhum registro anterior encontrado. Consumo não recalculado.");
+                        consumo = valorMedidor - data.valorMedidor;
+
+                        data.consumo = consumo;
+                        data.valorPago = consumo * data.valorPorKw;
+
+                        salvarAtualizacao(objectStore, data, id);
+                    }
+                };
+
+                requestAnterior.onerror = function (event) {
+                    console.error(`Erro ao buscar o registro anterior:`, event.target.errorCode);
+                };
+            };
+
+            request.onerror = function (event) {
+                console.error(`Erro ao buscar o registro para edição:`, event.target.errorCode);
+            };
+        }
+
+        function salvarAtualizacao(objectStore, data, id) {
+            console.log(`Dados atualizados antes de salvar:`, data);
+
+            const updateRequest = objectStore.put(data);
+
+            updateRequest.onsuccess = function () {
+                console.log(`Registro com ID ${id} atualizado com sucesso.`);
+                alert("Registro atualizado com sucesso!");
+                exibirRegistros('12'); // Atualiza a tabela.
+            };
+
+            updateRequest.onerror = function (event) {
+                console.error(`Erro ao atualizar o registro com ID ${id}:`, event.target.errorCode);
+            };
+        }
+
+
+
+        function apagarRegistro(id) {
+            const transaction = db.transaction(["consumo"], "readwrite");
+            const objectStore = transaction.objectStore("consumo");
+            const request = objectStore.delete(id);
+
+            request.onsuccess = function () {
+                alert("Registro apagado com sucesso!");
+                exibirRegistros('12');
+            };
+
+            request.onerror = function (event) {
+                console.error("Erro ao apagar o registro:", event.target.errorCode);
+            };
+        }
+
+        function gerarRelatorio() {
+            const dataInicio = document.getElementById("relatorioDataInicio").value;
+            const dataFim = document.getElementById("relatorioDataFim").value;
+
+            const transaction = db.transaction(["consumo"], "readonly");
+            const objectStore = transaction.objectStore("consumo");
+
+            let tabelaHTML = `<div class="table-container"><table>
+                        <thead>
+                            <tr>
+                                <th>Data Início</th>
+                                <th>Data Fim</th>
+                                <th>Valor do Medidor</th>
+                                <th>Consumo (kW)</th>
+                                <th>Valor Pago (€)</th>
+                                <th>Valor por kW (€)</th>
+                            </tr>
+                        </thead>
+                        <tbody>`;
+            let consumoTotal = 0;
+            let valorTotal = 0;
+            let registros = [];
+
+            objectStore.openCursor(null, "prev").onsuccess = function (event) {
+                const cursor = event.target.result;
+                if (cursor) {
+                    if (!dataInicio || !dataFim || (cursor.value.dataInicio >= dataInicio && cursor.value.dataFim <= dataFim)) {
+                        registros.push(cursor.value);
+                    }
+                    cursor.continue();
+                } else {
+                    registros.sort((a, b) => new Date(b.dataFim) - new Date(a.dataFim));
+
+                    registros.forEach(item => {
+                        const dias = calcularDias(item.dataInicio, item.dataFim); // Calcular diferença de dias
+                        tabelaHTML += `<tr>
+                                <td>${formatarData(item.dataInicio)}</td>
+                                <td>${formatarData(item.dataFim)}<sup class="dias-diferenca">(${dias} dias)</sup></td> 
+                                <td>${(item.valorMedidor || 0).toFixed(2)}</td>
+                                <td>${(item.consumo || 0).toFixed(2)}<span class="media-diaria">(${(item.consumo / calcularDias(item.dataInicio, item.dataFim)).toFixed(0)}/dia)</span></td>
+                                <td>${(item.valorPago || 0).toFixed(2)}</td>
+                                <td class="valor-kw">${(item.valorPorKw || 0).toFixed(4)} <span style="font-size:0.8em;">(${item.operadora})</span></td>
+                            </tr>`;
+                        consumoTotal += item.consumo;
+                        valorTotal += item.valorPago;
+                    });
+
+                    tabelaHTML += `<tr>
+                            <td colspan="3"><strong>Total</strong></td>
+                            <td><strong>${consumoTotal.toFixed(2)} kW</strong></td>
+                            <td><strong>€${valorTotal.toFixed(2)}</strong></td>
+                            <td></td>
+                        </tr>`;
+                    tabelaHTML += `</tbody></table></div>`;
+                    document.getElementById("resultadoRelatorio").innerHTML = tabelaHTML;
+                }
+            };
+        }
+
+
+        function exportarDados() {
+            const transaction = db.transaction(["consumo"], "readonly");
+            const objectStore = transaction.objectStore("consumo");
+            const request = objectStore.getAll();
+
+            request.onsuccess = function (event) {
+                const data = request.result;
+                const json = JSON.stringify(data);
+                const blob = new Blob([json], { type: "application/json" });
+                const url = URL.createObjectURL(blob);
+
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = "consumoEnergia.json";
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            };
+        }
+
+        function importarDados(event) {
+            const file = event.target.files[0];
+            const reader = new FileReader();
+
+            reader.onload = function (event) {
+                const data = JSON.parse(event.target.result);
+                const transaction = db.transaction(["consumo"], "readwrite");
+                const objectStore = transaction.objectStore("consumo");
+
+                data.forEach(item => {
+                    if (item.dataInicio && item.dataFim && item.valorMedidor !== undefined) {
+                        objectStore.put(item);
+                    } else {
+                        console.error("Registro inválido encontrado e ignorado:", item);
+                    }
+                });
+
+                alert("Dados importados com sucesso!");
+                exibirRegistros('12');
+            };
+
+            reader.readAsText(file);
+        }
+
+        function switchContainer(containerId) {
+            const containers = ['inicio', 'registros', 'relatorios', 'config', 'sobre', 'licenca-container'];
+            containers.forEach(id => {
+                const container = document.getElementById(id);
+                container.classList.add('hidden'); // Esconde todas as telas
+            });
+
+            document.getElementById(containerId).classList.remove('hidden'); // Exibe a tela selecionada
+
+            // Redefine as telas de maneira simples
+            if (containerId === 'inicio') {
+                document.getElementById('formConsumo').reset(); // Reseta o formulário
+                document.getElementById('tabelaConsumo').innerHTML = ''; // Limpa a tabela de consumo
+                exibirUltimos3Meses(); // Carrega os dados mais recentes
+            } else if (containerId === 'registros') {
+                document.getElementById('registrosTableBody').innerHTML = ''; // Limpa o corpo da tabela de registros
+                document.getElementById('tabelaRegistros').style.display = 'none'; // Oculta a tabela
+            } else if (containerId === 'relatorios') {
+                document.getElementById('relatorioDataInicio').value = ''; // Limpa o campo de data inicial
+                document.getElementById('relatorioDataFim').value = ''; // Limpa o campo de data final
+                document.getElementById('resultadoRelatorio').innerHTML = ''; // Limpa o resultado do relatório
+            } else if (containerId === 'config') {
+                // Nada a redefinir para configurações no momento
+            }
+        }
+
+        async function getTarifaOperadora(operadora) {
+            let tarifas;
+            switch (operadora) {
+                case "EDP":
+                    tarifas = await getTarifasEDP();
+                    break;
+                case "Galp":
+                    tarifas = await getTarifasGalp();
+                    break;
+                case "Endesa":
+                    tarifas = await getTarifasEndesa();
+                    break;
+                default:
+                    tarifas = { "Tarifa Simples": 0.0 };
+            }
+            return tarifas["Tarifa Simples"];
+        }
+
+        function exibirValorPorKw() {
+            const operadora = document.getElementById("operadora").value;
+            getTarifaOperadora(operadora).then(valorPorKw => {
+                document.getElementById("valorPorKw").innerText = `Valor atual por kW: €${valorPorKw.toFixed(4)}`;
+            });
+        }
+
+        async function atualizarDropdownOperadoras() {
+            const operadoras = [
+                { nome: 'EDP', tarifa: await getTarifasEDP() },
+                { nome: 'Galp', tarifa: await getTarifasGalp() },
+                { nome: 'Endesa', tarifa: await getTarifasEndesa() }
+            ];
+
+            const dropdown = document.getElementById('operadora');
+            dropdown.innerHTML = '';
+
+            operadoras.forEach(operadora => {
+                const option = document.createElement('option');
+                option.value = operadora.nome;
+                option.text = `${operadora.nome} (€${operadora.tarifa["Tarifa Simples"].toFixed(4)})`;
+                dropdown.appendChild(option);
+            });
+
+            exibirValorPorKw();
+        }
+
+        window.onload = function () {
+            atualizarDropdownOperadoras();
+            document.getElementById("operadora").addEventListener("change", exibirValorPorKw);
+        };
+    </script>
+</head>
+
+<body>
+    <!-- Menu principal -->
+    <div class="menu">
+        <a href="#" onclick="switchContainer('inicio')">INÍCIO</a>
+        <a href="#" onclick="switchContainer('registros')">REGISTROS</a>
+        <a href="#" onclick="switchContainer('relatorios')">RELATÓRIOS</a>
+        <a href="#" onclick="switchContainer('config')">CONFIGURAÇÕES</a>
+    </div>
+
+    <!-- Tela de início -->
+    <div id="inicio" class="container">
+        <h1>Calculadora de Consumo de Energia</h1>
+        <div id="valorPorKw" class="base-calculo"></div>
+        <form id="formConsumo" onsubmit="adicionarConsumo(); return false;">
+            <div class="grid-container">
+                <div class="grid-item">
+                    <label style="margin-left: 125px;" for="dataInicio">Data Início:</label>
+                    <input class="input-esquerdo" type="date" id="dataInicio" required>
+                </div>
+                <div class="grid-item">
+                    <label class="input-direito" for="dataFim">Data Fim:</label>
+                    <input class="input-direito" type="date" id="dataFim" required>
+                </div>
+                <div class="grid-item">
+                    <label style="margin-left: 125px;" for="valorMedidor">Valor do Medidor:</label>
+                    <input class="input-esquerdo" type="number" id="valorMedidor" step="0.0001" required>
+                </div>
+                <div class="grid-item">
+                    <label class="input-direito" for="operadora">Operadora:</label>
+                    <select class="input-direito" id="operadora" required></select>
+                </div>
+            </div>
+            <button type="submit">Adicionar</button>
+        </form>
+
+        <h2>Últimos 3 Meses de Consumo</h2>
+        <div id="tabelaConsumo" class="table-container"></div>
+    </div>
+
+    <!-- Tela de registros -->
+    <div id="registros" class="container hidden">
+        <h1>Registros</h1>
+        <div class="record-menu">
+            <button onclick="exibirRegistros('12')">Últimos 12 Meses</button>
+            <button onclick="exibirRegistros('24')">Últimos 24 Meses</button>
+            <button onclick="exibirRegistros('todos')">Todos</button>
+        </div>
+
+        <table id="tabelaRegistros" style="display: none;">
+            <thead>
+                <tr>
+                    <th>Data Início</th>
+                    <th>Data Fim</th>
+                    <th>Valor do Medidor</th>
+                    <th>Consumo (kW)</th>
+                    <th>Valor Pago (€)</th>
+                    <th>Valor por kW (€)</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody id="registrosTableBody"></tbody>
+        </table>
+
+    </div>
+
+    <!-- Tela de relatórios -->
+    <div id="relatorios" class="container hidden">
+        <h1>Gerar Relatório</h1>
+        <form class="report-form" onsubmit="gerarRelatorio(); return false;">
+            <div class="report-row">
+                <div>
+                    <label for="relatorioDataInicio">Data Início:</label>
+                    <input type="date" id="relatorioDataInicio">
+                </div>
+                <div>
+                    <label for="relatorioDataFim">Data Fim:</label>
+                    <input type="date" id="relatorioDataFim">
+                </div>
+            </div>
+            <button type="submit">Gerar Relatório</button>
+        </form>
+        <div id="resultadoRelatorio" class="table-container"></div>
+    </div>
+
+    <!-- Tela de configurações -->
+    <div id="config" class="container hidden">
+        <h1>Configurações</h1>
+        <div class="record-menu">
+            <button onclick="exportarDados()">Exportar Dados</button>
+            <button onclick="document.getElementById('importarArquivo').click();">Importar Dados</button>
+            <button onclick="switchContainer('sobre')">Sobre</button>
+        </div>
+        <input type="file" id="importarArquivo" accept=".json" style="display: none;" onchange="importarDados(event)">
+    </div>
+    <div class="assinatura">by André Ricardo</div>
+
+    <section id="sobre" class="container hidden">
+        <h1>Sobre</h1>
+        <br>
+        <p>Desenvolvido por André Ricardo</p>
+
+        <p>
+            Este software é um projeto de código aberto, licenciado sob a Licença Pública Geral GNU versão 3
+            (<a href="#" onclick="switchContainer('licenca-container')">GPLv3</a>).
+            Você é livre para utilizá-lo, modificá-lo e redistribuí-lo, desde que mantenha a mesma licença e os
+            devidos créditos ao autor.
+        </p>
+
+        Não esqueça, é vital exportar seus dados regularmente para um local seguro.
+        Afinal, a segurança é uma ilusão, mas a precaução é uma arte.
+        </p>
+
+        <p>Github: <a href="https://github.com/AndreRicardoJS/KWComsuption"
+                target="_blank">github.com/AndreRicardoJS/KWComsuption</a>
+        </p>
+
+
+        Caso considere este software útil e deseje apoiar seu desenvolvimento,
+        você pode fazer uma doação via PayPal.
+        </p>
+        <form action="https://www.paypal.com/donate" target="_blank" method="post" target="_top">
+            <input type="hidden" name="hosted_button_id" value="36A6XS27LY7BY">
+            <input type="image" src="https://www.paypalobjects.com/en_US/i/btn/btn_donate_LG.gif" border="0"
+                name="submit" title="PayPal - The safer, easier way to pay online!" alt="Donate with PayPal button"
+                style="width: 100px; height: auto;">
+            <img alt="" border="0" src="https://www.paypal.com/en_US/i/scr/pixel.gif" width="1" height="1">
+        </form>
+
+        <p>
+    </section>
+
+    <section id="licenca-container" class="hidden">
+        <h1>Licença</h1>
+        <br>
+        <p>Copyright (C) 2024 André Ricardo</p>
+        <p>
+            Este programa é software livre: você pode redistribuí-lo e/ou modificá-lo sob os termos da Licença
+            Pública Geral GNU, publicada pela Fundação para o Software Livre, versão 3 da Licença ou qualquer versão
+            posterior.
+        </p>
+        <p>
+            Este programa é distribuído na esperança de que seja útil, mas SEM QUALQUER GARANTIA; sem mesmo a
+            garantia implícita de COMERCIABILIDADE ou ADEQUAÇÃO A UM PROPÓSITO ESPECÍFICO. Consulte a Licença
+            Pública Geral GNU para mais detalhes.
+        </p>
+        <p>
+            Você deve ter recebido uma cópia da Licença Pública Geral GNU junto com este programa. Caso contrário,
+            veja <a href="https://www.gnu.org/licenses/">https://www.gnu.org/licenses/</a>.
+        </p>
+    </section>
+
+</body>
+
+</html>
